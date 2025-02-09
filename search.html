@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Sheets 搜尋功能</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <style>
+        h1 {
+            text-align: center;
+        }
+
+        .search {
+            text-align: center;
+        }
+
+        #myInput {
+            width: 80%;
+            font-size: 20px;
+            padding: 10px;
+            background-color: aquamarine;
+            border: 1px solid;
+            margin-bottom: 12px;
+        }
+
+        table {
+            margin: 0 auto;
+            border-collapse: collapse;
+            width: 80%;
+            text-align: center;
+        }
+
+        #myTable th {
+            background-color: brown;
+            color: white;
+            padding: 10px;
+        }
+
+        #myTable td {
+            padding: 8px;
+            border: 1px solid black;
+        }
+
+        #myTable tr:hover {
+            background-color: rgb(41, 41, 41);
+            color: white;
+            transition: background-color 0.8s ease-in-out;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>歷屆試題資料表</h1>
+    <form class="search">
+        <input type="text" id="myInput" placeholder="請輸入要搜尋的關鍵字">
+    </form>
+
+    <table id="myTable">
+        <thead>
+            <tr>
+                <th>年度</th>
+                <th>次別</th>
+                <th>出版社</th>
+                <th>題號</th>
+                <th>冊別及單元</th>
+                <th>測驗內容</th>
+            </tr>
+        </thead>
+        <tbody id="myBody">
+            <!-- 這裡將由 JavaScript 動態填入資料 -->
+        </tbody>
+    </table>
+
+    <script>
+        const SHEET_ID = '1hFKagpaHzoBvX_pffULhSSsczDFJpmmG_d_rBPCeiCw'; // ⚠️ 請填入你的 Google Sheets ID
+        const API_KEY = 'AIzaSyAI1Fr3Q_NthL7adXW9DUqO24pu7vQrpDc'; // ⚠️ 請填入你的 Google API Key
+        const SHEET_NAME = '工作表1'; // ⚠️ 試算表的名稱，例如 'Sheet1'
+
+        async function fetchSheetData() {
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}?key=${API_KEY}`;
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                return data.values || [];
+            } catch (error) {
+                console.error("❌ 錯誤：無法讀取試算表資料", error);
+                return [];
+            }
+        }
+
+        async function loadTable() {
+            const data = await fetchSheetData();
+            const tableBody = $("#myBody");
+
+            if (data.length > 1) {
+                tableBody.empty(); // 清空現有表格
+
+                for (let i = 1; i < data.length; i++) { // 跳過標題行
+                    const row = data[i];
+                    let newRow = `<tr>
+                        <td>${row[0]}</td>
+                        <td>${row[1]}</td>
+                        <td>${row[2]}</td>
+                        <td>${row[3]}</td>
+                        <td>${row[4]}</td>
+                        <td>${row[5]}</td>
+                    </tr>`;
+                    tableBody.append(newRow);
+                }
+            }
+        }
+
+        $(document).ready(async function () {
+            await loadTable();
+
+            $("#myInput").on("keyup", function () {
+                var value = $(this).val().toLowerCase();
+                var found = false;
+
+                $("#myBody tr").each(function () {
+                    var rowText = $(this).text().toLowerCase();
+                    if (rowText.indexOf(value) > -1) {
+                        $(this).show();
+                        found = true;
+                    } else {
+                        $(this).hide();
+                    }
+                });
+
+                if (!found) {
+                    if ($("#noResult").length === 0) {
+                        $("#myBody").append('<tr id="noResult"><td colspan="4" style="text-align:center; color:red;">找不到符合的資料</td></tr>');
+                    }
+                } else {
+                    $("#noResult").remove();
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>
