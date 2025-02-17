@@ -150,7 +150,7 @@
                 action: $("#rowIndex").val() ? "update" : "add",
                 row: $("#rowIndex").val(),
                 年度: $("#year").val(), 次別: $("#term").val(), 出版社: $("#publisher").val(),
-                題號: $("#question").val(), 冊別單元: $("#unit").val(), 測驗內容: $("#content").val(),$("#answer").val(答案)
+                題號: $("#question").val(), 冊別單元: $("#unit").val(), 測驗內容: $("#content").val(),答案:$("#answer").val()
             });
 
             await fetch(API_URL, { method: "POST", body: params });
