@@ -1,0 +1,175 @@
+
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GAS歷屆複習考試題查詢</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+        }
+        h1 { color: #333; margin-bottom: 10px; }
+        .search { margin-bottom: 20px; }
+        #myInput {
+            width: 50%; font-size: 18px; padding: 10px;
+            border-radius: 10px; border: 2px solid #007BFF;
+            background-color: white; transition: all 0.3s;
+        }
+        #myInput:focus {
+            border-color: #0056b3; box-shadow: 0 0 8px rgba(0, 123, 255, 0.5);
+            outline: none;
+        }
+        table {
+            margin: 0 auto; border-collapse: collapse; width: 90%;
+            background: white; border-radius: 8px; overflow: hidden;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        #myTable th, #myTable td {
+            padding: 12px; border-bottom: 1px solid #ddd;font-size: 20px;
+        }
+        #myTable th {
+            background-color: #007BFF; color: white; font-size: 18px;
+        }
+        #myTable tr:hover { background-color: #f1f1f1; }
+        button {
+            padding: 8px 12px; font-size: 14px;
+            border: none; border-radius: 5px; cursor: pointer;
+            transition: all 0.3s;
+        }
+        .edit-btn { background-color: #ffc107; color: black; }
+        .edit-btn:hover { background-color: #e0a800; }
+        .delete-btn { background-color: #dc3545; color: white; }
+        .delete-btn:hover { background-color: #c82333; }
+        .add-btn { background-color: #28a745; color: white; }
+        .add-btn:hover { background-color: #218838; }
+        #dataForm {
+            display: none; position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); background: white;
+            padding: 20px; box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.3);
+            border-radius: 10px; text-align: left;
+        }
+        #dataForm input {
+            width: 100%; padding: 8px; margin-bottom: 10px;
+            border: 1px solid #ddd; border-radius: 5px;
+        }
+        .close-btn { background-color: #6c757d; color: white; }
+        .close-btn:hover { background-color: #5a6268; }
+    </style>
+</head>
+<body>
+
+    <h1>歷屆複習考試題列表</h1>
+
+    <!-- 查詢欄 -->
+    <div class="search">
+        <input type="text" id="myInput" placeholder="🔍 請輸入要搜尋的關鍵字">
+    </div>
+
+    <!-- 操作按鈕 -->
+    <button class="add-btn" onclick="showForm()">➕ 新增資料</button>
+
+    <!-- 表單區 -->
+    <div id="dataForm">
+        <h2>📌 編輯資料</h2>
+        <input type="hidden" id="rowIndex">
+        年度: <input type="text" id="year"><br>
+        次別: <input type="text" id="term"><br>
+        出版社: <input type="text" id="publisher"><br>
+        題號: <input type="text" id="question"><br>
+        冊別單元: <input type="text" id="unit"><br>
+        測驗內容: <input type="text" id="content"><br>
+	答案: <input type="text" id="answer"><br>
+        <button class="add-btn" onclick="saveData()">💾 儲存</button>
+        <button class="close-btn" onclick="hideForm()">❌ 關閉</button>
+    </div>
+
+    <table id="myTable">
+        <thead>
+            <tr>
+                <th>年度</th><th>次別</th><th>出版社</th><th>題號</th><th>冊別及單元</th><th>測驗內容</th><th>答案</th><th>操作</th>
+            </tr>
+        </thead>
+        <tbody id="myBody"></tbody>
+    </table>
+
+    <script>
+        const API_URL = "https://script.google.com/macros/s/AKfycbxQizuyjNz2azSzCw5ut4FBAJdjwJK2avXjonGZc50LfvaPM9q8l7KRTHLVGugZUY6r/exec"; //⚠️ 請填入你的 API 網址
+
+        async function fetchSheetData() {
+            const response = await fetch(API_URL);
+            return await response.json();
+        }
+
+        async function loadTable() {
+            const data = await fetchSheetData();
+            const tableBody = $("#myBody");
+            tableBody.empty();
+
+            for (let i = 1; i < data.length; i++) {
+                const row = data[i];
+                let newRow = `<tr>
+                    <td>${row[0]}</td><td>${row[1]}</td><td>${row[2]}</td>
+                    <td>${row[3]}</td><td>${row[4]}</td><td>${row[5]}</td><td>${row[6]}</td>
+                    <td>
+                        <button class="edit-btn" onclick="editRow(${i}, '${row.join("','")}')">✏️ 修改</button>
+                        <button class="delete-btn" onclick="deleteRow(${i})">🗑️ 刪除</button>
+                    </td>
+                </tr>`;
+                tableBody.append(newRow);
+            }
+        }
+
+        function showForm() { $("#dataForm").show(); }
+        function hideForm() { $("#dataForm").hide(); }
+
+        function editRow(index, 年度, 次別, 出版社, 題號, 冊別單元, 測驗內容,答案) {
+            $("#rowIndex").val(index);
+            $("#year").val(年度);
+            $("#term").val(次別);
+            $("#publisher").val(出版社);
+            $("#question").val(題號);
+            $("#unit").val(冊別單元);
+            $("#content").val(測驗內容);
+	    $("#answer").val(答案);
+            showForm();
+        }
+
+        async function deleteRow(index) {
+            if (!confirm("確定要刪除這筆資料嗎？")) return;
+            const params = new URLSearchParams({ action: "delete", row: index });
+            await fetch(API_URL, { method: "POST", body: params });
+            await loadTable();
+        }
+
+        async function saveData() {
+            const params = new URLSearchParams({
+                action: $("#rowIndex").val() ? "update" : "add",
+                row: $("#rowIndex").val(),
+                年度: $("#year").val(), 次別: $("#term").val(), 出版社: $("#publisher").val(),
+                題號: $("#question").val(), 冊別單元: $("#unit").val(), 測驗內容: $("#content").val(),$("#answer").val(答案)
+            });
+
+            await fetch(API_URL, { method: "POST", body: params });
+            hideForm();
+            await loadTable();
+        }
+
+        $(document).ready(function () {
+            loadTable();
+
+            // 🔥 修正查詢功能失效問題
+            $("#myInput").on("keyup", function () {
+                let value = $(this).val().toLowerCase();
+                $("#myBody tr").filter(function () {
+                    $(this).toggle($(this).text().toLowerCase().includes(value));
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>
