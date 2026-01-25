@@ -1,0 +1,268 @@
+
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GAS歷屆複習考試題查詢</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+        }
+        h1 { color: #333; margin-bottom: 10px; }
+        .search { margin-bottom: 20px; }
+        #myInput {
+            width: 50%; font-size: 18px; padding: 10px;
+            border-radius: 10px; border: 2px solid #007BFF;
+            background-color: white; transition: all 0.3s;
+        }
+        #myInput:focus {
+            border-color: #0056b3; box-shadow: 0 0 8px rgba(0, 123, 255, 0.5);
+            outline: none;
+        }
+        table {
+            margin: 0 auto; border-collapse: collapse; width: 90%;
+            background: white; border-radius: 8px; overflow: hidden;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        #myTable th, #myTable td {
+            padding: 12px; border-bottom: 1px solid #ddd;font-size: 20px;
+        }
+        #myTable th {
+            background-color: #007BFF; color: white; font-size: 18px;
+        }
+        #myTable tr:hover { background-color: #f1f1f1; }
+        button {
+            padding: 8px 12px; font-size: 14px;
+            border: none; border-radius: 5px; cursor: pointer;
+            transition: all 0.3s;
+        }
+        .edit-btn { background-color: #ffc107; color: black; }
+        .edit-btn:hover { background-color: #e0a800; }
+        .delete-btn { background-color: #dc3545; color: white; }
+        .delete-btn:hover { background-color: #c82333; }
+        .add-btn { background-color: #28a745; color: white; }
+        .add-btn:hover { background-color: #218838; }
+        #dataForm {
+            display: none; position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); background: white;
+            padding: 20px; box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.3);
+            border-radius: 10px; text-align: left;
+        }
+        #dataForm input {
+            width: 100%; padding: 8px; margin-bottom: 10px;
+            border: 1px solid #ddd; border-radius: 5px;
+        }
+        .close-btn { background-color: #6c757d; color: white; }
+        .close-btn:hover { background-color: #5a6268; }
+    </style>
+</head>
+<body>
+
+    <h1>歷屆複習考試題列表</h1>
+
+    <!-- 查詢欄 -->
+    <div class="search">
+        <input type="text" id="myInput" placeholder="🔍 請輸入要搜尋的關鍵字">
+    </div>
+
+    <!-- 操作按鈕 -->
+	<button class="add-btn" onclick="addNew()">➕ 新增資料</button>
+	
+    <!-- 表單區 -->
+    <div id="dataForm">
+        <h2>📌 編輯資料</h2>
+        <input type="hidden" id="rowIndex">
+        <table>
+	<tr>	<td>年度: <input type="text" id="year"></td>
+        	<td>次別: <input type="text" id="term"></td>
+	</tr>
+
+        <tr>	<td>出版社: <input type="text" id="publisher"></td>
+        	<td>題號: <input type="text" id="question"></td>
+	</tr>
+
+        <tr>	<td>冊別單元: <input type="text" id="unit"></td>
+        	<td>測驗內容: <input type="text" id="content"><br></td>
+	</tr>
+
+	<tr>	<td>答案: <input type="text" id="answer"></td>
+		<td>類別: <input type="text" id="category"></td>
+	</tr>
+	<tr>	<td>難度: <input type="text" id="difficult"></td>
+		<td>鑑別度: <input type="text" id="discrimination"></td>
+	</tr>
+	</table>
+	
+        <button class="add-btn" onclick="saveData()">💾 儲存</button>
+        <button class="close-btn" onclick="hideForm()">❌ 關閉</button>
+	
+    </div>
+
+    <table id="myTable">
+        <thead>
+            <tr>
+                <th>年度</th><th>次別</th><th>出版社</th><th>題號</th><th>冊別及單元</th><th>測驗內容</th><th>答案</th><th>類別</th><th>難度</th><th>鑑別度</th><th>操作</th>
+            </tr>
+        </thead>
+        <tbody id="myBody"></tbody>
+    </table>
+
+	
+    <script>
+	let sheetData = [];
+        const API_URL = "https://script.google.com/macros/s/AKfycbwZ6H1Ooxf5CztpjT1a6lD_tQ_cPNmHZQgEvXLvUGx6nhMF3lYMHWJHfRViTyxd_xM/exec"; //⚠️ 請填入你的 API 網址
+
+
+        async function fetchSheetData() {
+    		const response = await fetch(API_URL);
+    		sheetData = await response.json(); // ⭐ 存成全域
+    		return sheetData;
+	}
+
+        async function loadTable() {
+    		sheetData = await fetchSheetData();
+    		const tableBody = $("#myBody");
+    		tableBody.empty();
+
+    		for (let i = 1; i < sheetData.length; i++) {
+        		const row = sheetData[i];
+        		let newRow = `<tr>
+            		<td>${row[0]}</td>
+            		<td>${row[1]}</td>
+            		<td>${row[2]}</td>
+            		<td>${row[3]}</td>
+           		<td>${row[4]}</td>
+           		<td>${row[5]}</td>
+            		<td>${row[6]}</td>
+            		<td>${row[7]}</td>
+           		<td>${row[8]}</td>
+			<td>${row[9]}</td>
+            		<td>
+                <button class="edit-btn" onclick="editRow(${i})">✏️ 修改</button>
+                <button class="delete-btn" onclick="deleteRow(${i})">🗑️ 刪除</button>
+            		</td>
+        	</tr>`;
+       		 tableBody.append(newRow);
+    		}
+	}
+
+	function showForm() {
+    		$("#dataForm").show();
+	}
+
+
+
+	function addNew() {
+    		$("#rowIndex").val("");
+    		$("#dataForm input[type='text']").val("");
+    		$("#dataForm").show();
+	}
+
+
+
+        function hideForm() { $("#dataForm").hide(); }
+
+        function editRow(index) {
+    		const row = sheetData[index];
+    		if (!row) return alert("資料尚未載入");
+
+    		$("#rowIndex").val(index);
+   		$("#year").val(row[0]);
+    		$("#term").val(row[1]);
+    		$("#publisher").val(row[2]);
+    		$("#question").val(row[3]);
+   		$("#unit").val(row[4]);
+   		$("#content").val(row[5]);
+   		$("#answer").val(row[6]);
+		$("#category").val(row[7]);
+   		$("#difficult").val(row[8]);
+   		$("#discrimination").val(row[9]);
+
+    		showForm();
+	}
+
+
+        async function deleteRow(index) {
+            if (!confirm("確定要刪除這筆資料嗎？")) return;
+            const params = new URLSearchParams({ action: "delete", row: index });
+            await fetch(API_URL, { method: "POST", body: params });
+            await loadTable();
+        }
+
+        async function saveData() {
+    const rowIdx = $("#rowIndex").val();
+    const actionType = rowIdx !== "" ? "update" : "add";
+
+    // 1. 建立參數物件
+    const payload = {
+        action: actionType,
+        row: rowIdx,
+        年度: $("#year").val(),
+        次別: $("#term").val(),
+        出版社: $("#publisher").val(),
+        題號: $("#question").val(),
+        冊別單元: $("#unit").val(),
+        測驗內容: $("#content").val(),
+        答案: $("#answer").val(),
+	類別: $("#category").val(),
+        難度: $("#difficult").val(),
+        鑑別度: $("#discrimination").val()
+    };
+
+    // 2. 轉換為 URL 編碼格式 (重要：GAS doPost 偏好此格式)
+    const formData = new URLSearchParams();
+    for (const key in payload) {
+        formData.append(key, payload[key]);
+    }
+
+    try {
+        // 顯示處理中狀態
+        $("#saveBtn").prop("disabled", true).text("⌛ 處理中...");
+
+        // 3. 使用 fetch 發送 POST，並允許重新導向
+        const response = await fetch(API_URL, {
+            method: "POST",
+            body: formData,
+            mode: "no-cors", // 避免跨網域 CORS 問題阻擋請求
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            }
+        });
+
+        // 註：mode: "no-cors" 下 response.ok 會是 false，這是正常的
+        alert(actionType === "update" ? "修改指令已送出！" : "新增指令已送出！");
+        
+        hideForm();
+        
+        // 延遲 1 秒再重新載入，給予 Google 試算表寫入的時間
+        setTimeout(() => {
+            loadTable();
+            $("#saveBtn").prop("disabled", false).text("💾 儲存");
+        }, 1000);
+
+    } catch (error) {
+        console.error("發生錯誤:", error);
+        alert("傳送失敗，請查看瀏覽器主控台 (F12)");
+        $("#saveBtn").prop("disabled", false).text("💾 儲存");
+    }
+}
+
+        $(document).ready(function () {
+            loadTable();
+
+            // 🔥 修正查詢功能失效問題
+            $("#myInput").on("keyup", function () {
+                let value = $(this).val().toLowerCase();
+                $("#myBody tr").filter(function () {
+                    $(this).toggle($(this).text().toLowerCase().includes(value));
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>
